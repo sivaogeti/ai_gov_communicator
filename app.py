@@ -14,7 +14,7 @@ def generate_image_from_replicate(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "version": "stability-ai/stable-diffusion:b3d14e1c",
+        "version": "stability-ai/stable-diffusion:ac732df8",
         "input": {
             "prompt": prompt,
             "image_dimensions": "512x512",
@@ -33,15 +33,18 @@ def generate_image_from_replicate(prompt):
     get_url = prediction["urls"]["get"]
 
     # Polling for result
-    while True:
+    for _ in range(20):  # Retry up to 20 times (about 60 seconds)
         result = requests.get(get_url, headers=headers)
         result_json = result.json()
         if result_json["status"] == "succeeded":
-            return result_json["output"][0]  # Actual image URL
+            return result_json["output"][0]
         elif result_json["status"] == "failed":
             st.error("❌ Image generation failed.")
             return None
+        time.sleep(3)  # Wait before next poll
 
+    st.error("⏱️ Timed out waiting for image.")
+    return None
 # ----- Streamlit UI -----
 st.set_page_config(page_title="AI Gov Communication", layout="wide")
 st.title("📢 AI-Powered Government Communication Suite")
