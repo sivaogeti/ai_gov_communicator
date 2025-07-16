@@ -10,32 +10,30 @@ from backend.media_gen import generate_audio, generate_video
 from backend.pptx_gen import generate_rich_pptx  # Optional: Enable if needed
 
 # ----- Function to get an image from Unsplash -----
+from PIL import Image
+from io import BytesIO
+import requests
+
 def get_unsplash_image(prompt):
     try:
-        # Lowercase + strip spaces
-        sanitized_prompt = prompt.strip().lower().replace(' ', '+')
-        
-        # Use fallback if prompt is too vague or fails
-        if not sanitized_prompt:
-            sanitized_prompt = "nature"
-
-        # This URL returns a random image for the keyword
-        search_url = f"https://source.unsplash.com/random/512x512/?{sanitized_prompt}"
-
-        # Follow redirect to get actual image
-        response = requests.get(search_url, allow_redirects=False, timeout=10)
-        if response.status_code == 302:
-            image_url = response.headers["Location"]
-            image_response = requests.get(image_url, timeout=10)
-            if image_response.status_code == 200:
-                return Image.open(BytesIO(image_response.content))
-            else:
-                st.warning("⚠️ Image download failed.")
+        # Try with prompt
+        if prompt.strip():
+            url = f"https://source.unsplash.com/random/512x512/?{prompt.strip().lower().replace(' ', '+')}"
         else:
-            st.warning(f"⚠️ No redirect received from Unsplash for prompt '{prompt}'")
+            url = "https://source.unsplash.com/random/512x512"
+
+        # Request image (Unsplash redirects to actual image URL)
+        response = requests.get(url, timeout=10)
+
+        if response.status_code == 200 and response.headers['Content-Type'].startswith("image"):
+            return Image.open(BytesIO(response.content))
+        else:
+            st.warning(f"⚠️ Unsplash did not return an image for prompt '{prompt}'.")
+            return None
     except Exception as e:
-        st.warning(f"⚠️ Could not fetch image: {e}")
-    return None
+        st.warning(f"⚠️ Error fetching image: {e}")
+        return None
+
 
 
 
