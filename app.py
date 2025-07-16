@@ -11,14 +11,25 @@ from backend.pptx_gen import generate_rich_pptx  # Optional: Enable if needed
 
 # ----- Function to get an image from Unsplash -----
 def get_unsplash_image(prompt):
-    url = f"https://source.unsplash.com/512x512/?{prompt.replace(' ', '+')}"
     try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            return Image.open(BytesIO(response.content))
+        # Step 1: Get redirect URL from Unsplash
+        search_url = f"https://source.unsplash.com/512x512/?{prompt.replace(' ', '+')}"
+        redirect_response = requests.get(search_url, allow_redirects=False, timeout=10)
+
+        if redirect_response.status_code == 302:
+            image_url = redirect_response.headers["Location"]
+            # Step 2: Download actual image from redirected location
+            image_response = requests.get(image_url, timeout=10)
+            if image_response.status_code == 200:
+                return Image.open(BytesIO(image_response.content))
+            else:
+                st.warning(f"⚠️ Failed to load image from: {image_url}")
+        else:
+            st.warning(f"⚠️ No redirect received from Unsplash for prompt '{prompt}'")
     except Exception as e:
         st.warning(f"⚠️ Could not fetch image: {e}")
     return None
+
 
 # ----- Streamlit UI -----
 st.set_page_config(page_title="AI Gov Communication", layout="wide")
