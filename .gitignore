@@ -1,0 +1,21 @@
+# Ignore metadata and hidden folders
+.metadata/
+.DS_Store
+__pycache__/
+*.pyc
+
+# Ignore output folders (optional)
+output/generated_media/
+outputs/
+*.pptx
+*.mp4
+*.wav
+*.png
+
+# Environment files (if you use virtualenv or .env)
+.env
+.venv/
+*.env
+
+# Streamlit secrets (only store locally)
+.streamlit/secrets.toml
