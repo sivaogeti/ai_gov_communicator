@@ -14,7 +14,7 @@ def generate_image_from_replicate(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "version": "a9758cbf8aa58e4ee6823f5c8572aa37793d374168579e0cddf44a00a40d63e9",  # SD-v1.5
+        "version": "db21e45a3c655c31a8b9b4f8fd147e3a9b403d39c044dc5a3d57c03f276c5de6",  # SD-v1.5
         "input": {"prompt": prompt}
     }
 
