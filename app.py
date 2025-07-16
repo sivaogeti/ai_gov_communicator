@@ -12,23 +12,31 @@ from backend.pptx_gen import generate_rich_pptx  # Optional: Enable if needed
 # ----- Function to get an image from Unsplash -----
 def get_unsplash_image(prompt):
     try:
-        # Step 1: Get redirect URL from Unsplash
-        search_url = f"https://source.unsplash.com/512x512/?{prompt.replace(' ', '+')}"
-        redirect_response = requests.get(search_url, allow_redirects=False, timeout=10)
+        # Lowercase + strip spaces
+        sanitized_prompt = prompt.strip().lower().replace(' ', '+')
+        
+        # Use fallback if prompt is too vague or fails
+        if not sanitized_prompt:
+            sanitized_prompt = "nature"
 
-        if redirect_response.status_code == 302:
-            image_url = redirect_response.headers["Location"]
-            # Step 2: Download actual image from redirected location
+        # This URL returns a random image for the keyword
+        search_url = f"https://source.unsplash.com/random/512x512/?{sanitized_prompt}"
+
+        # Follow redirect to get actual image
+        response = requests.get(search_url, allow_redirects=False, timeout=10)
+        if response.status_code == 302:
+            image_url = response.headers["Location"]
             image_response = requests.get(image_url, timeout=10)
             if image_response.status_code == 200:
                 return Image.open(BytesIO(image_response.content))
             else:
-                st.warning(f"⚠️ Failed to load image from: {image_url}")
+                st.warning("⚠️ Image download failed.")
         else:
             st.warning(f"⚠️ No redirect received from Unsplash for prompt '{prompt}'")
     except Exception as e:
         st.warning(f"⚠️ Could not fetch image: {e}")
     return None
+
 
 
 # ----- Streamlit UI -----
