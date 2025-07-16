@@ -2,49 +2,28 @@ import streamlit as st
 import os
 import re
 import requests
+import time
 
-from backend.media_gen import generate_audio, generate_video  # Make sure these are cloud-compatible
+from backend.media_gen import generate_audio, generate_video  # Ensure these are cloud-compatible
 from backend.pptx_gen import generate_rich_pptx  # Optional: Enable if needed
 
-# ----- Function to generate image from Replicate -----
-def generate_image_from_replicate(prompt):
-    url = "https://api.replicate.com/v1/predictions"
-    headers = {
-        "Authorization": f"Token {st.secrets['REPLICATE_API_TOKEN']}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "version": "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
-        "input": {
-            "prompt": prompt,
-            "image_dimensions": "512x512",
-            "num_outputs": 1,
-            "num_inference_steps": 50,
-            "guidance_scale": 7.5}
-    }
+# ----- Function to generate image from Hugging Face Inference API -----
+def generate_image_from_huggingface(prompt):
+    api_token = st.secrets["HF_API_TOKEN"]
+    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
+    headers = {"Authorization": f"Bearer {api_token}"}
 
-    response = requests.post(url, json=data, headers=headers)
-    if response.status_code != 201:
-        st.error("❌ Failed to start image generation.")
-        st.code(response.text, language="json")  # Show error details
+    payload = {"inputs": prompt}
+    response = requests.post(API_URL, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        image_bytes = response.content
+        return image_bytes
+    else:
+        st.error("❌ Failed to generate image.")
+        st.code(response.text, language="json")
         return None
 
-    prediction = response.json()
-    get_url = prediction["urls"]["get"]
-
-    # Polling for result
-    for _ in range(20):  # Retry up to 20 times (about 60 seconds)
-        result = requests.get(get_url, headers=headers)
-        result_json = result.json()
-        if result_json["status"] == "succeeded":
-            return result_json["output"][0]
-        elif result_json["status"] == "failed":
-            st.error("❌ Image generation failed.")
-            return None
-        time.sleep(3)  # Wait before next poll
-
-    st.error("⏱️ Timed out waiting for image.")
-    return None
 # ----- Streamlit UI -----
 st.set_page_config(page_title="AI Gov Communication", layout="wide")
 st.title("📢 AI-Powered Government Communication Suite")
@@ -58,11 +37,11 @@ if st.button("Generate Image"):
     status_placeholder = st.empty()
     status_placeholder.text("Generating image... Please wait...")
 
-    image_url = generate_image_from_replicate(prompt)
+    image_bytes = generate_image_from_huggingface(prompt)
     status_placeholder.empty()
 
-    if image_url:
-        st.image(image_url, caption="Generated Image", use_container_width=True)
+    if image_bytes:
+        st.image(image_bytes, caption="Generated Image", use_container_width=True)
     else:
         st.error("❌ Failed to generate image.")
 
@@ -84,8 +63,8 @@ st.markdown(f"```\n{script}\n```")
 
 # ----- Video Generation -----
 st.subheader("🎥 Generate Video")
-if 'audio_path' in locals() and image_url:
-    video_path = generate_video(image_url, audio_path)
+if 'audio_path' in locals() and image_bytes:
+    video_path = generate_video(image_bytes, audio_path)
     if video_path:
         st.video(video_path)
     else:
