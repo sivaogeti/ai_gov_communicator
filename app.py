@@ -2,27 +2,14 @@ import streamlit as st
 import os
 import re
 import requests
-import time
 
-from backend.media_gen import generate_audio, generate_video  # Ensure these are cloud-compatible
+from backend.media_gen import generate_audio, generate_video  # Ensure these exist
 from backend.pptx_gen import generate_rich_pptx  # Optional: Enable if needed
 
-# ----- Function to generate image from Hugging Face Inference API -----
-def generate_image_from_huggingface(prompt):
-    api_token = st.secrets["HF_API_TOKEN"]
-    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
-    headers = {"Authorization": f"Bearer {api_token}"}
-
-    payload = {"inputs": prompt}
-    response = requests.post(API_URL, headers=headers, json=payload)
-
-    if response.status_code == 200:
-        image_bytes = response.content
-        return image_bytes
-    else:
-        st.error("❌ Failed to generate image.")
-        st.code(response.text, language="json")
-        return None
+# ----- Function to get Unsplash image URL -----
+def get_unsplash_image(prompt):
+    # Returns a dynamic image based on prompt from Unsplash
+    return f"https://source.unsplash.com/512x512/?{prompt.replace(' ', '+')}"
 
 # ----- Streamlit UI -----
 st.set_page_config(page_title="AI Gov Communication", layout="wide")
@@ -32,18 +19,18 @@ st.title("📢 AI-Powered Government Communication Suite")
 prompt = st.text_area("Enter prompt for image generation:", "Enter prompt here")
 
 # Image generation
-st.subheader("🖼️ Generate Image")
+st.subheader("🖼️ Generate Image from Unsplash")
 if st.button("Generate Image"):
     status_placeholder = st.empty()
-    status_placeholder.text("Generating image... Please wait...")
+    status_placeholder.text("Fetching image... Please wait...")
 
-    image_bytes = generate_image_from_huggingface(prompt)
+    image_url = get_unsplash_image(prompt)
     status_placeholder.empty()
 
-    if image_bytes:
-        st.image(image_bytes, caption="Generated Image", use_container_width=True)
+    if image_url:
+        st.image(image_url, caption=f"Image for: {prompt}", use_container_width=True)
     else:
-        st.error("❌ Failed to generate image.")
+        st.error("❌ Failed to fetch image.")
 
 # ----- Audio Generation -----
 st.subheader("🎙️ Generate Audio")
@@ -63,8 +50,8 @@ st.markdown(f"```\n{script}\n```")
 
 # ----- Video Generation -----
 st.subheader("🎥 Generate Video")
-if 'audio_path' in locals() and image_bytes:
-    video_path = generate_video(image_bytes, audio_path)
+if 'audio_path' in locals() and 'image_url' in locals():
+    video_path = generate_video(image_url, audio_path)
     if video_path:
         st.video(video_path)
     else:
