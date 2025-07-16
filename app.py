@@ -14,8 +14,13 @@ def generate_image_from_replicate(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "version": "db21e45a3c655c31a8b9b4f8fd147e3a9b403d39c044dc5a3d57c03f276c5de6",  # SD-v1.5
-        "input": {"prompt": prompt}
+        "version": "stability-ai/stable-diffusion:b3d14e1c",
+        "input": {
+            "prompt": prompt,
+            "image_dimensions": "512x512",
+            "num_outputs": 1,
+            "num_inference_steps": 50,
+            "guidance_scale": 7.5}
     }
 
     response = requests.post(url, json=data, headers=headers)
