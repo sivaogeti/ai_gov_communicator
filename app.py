@@ -14,7 +14,7 @@ def generate_image_from_replicate(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "version": "stability-ai/stable-diffusion:ac732df8",
+        "version": "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
         "input": {
             "prompt": prompt,
             "image_dimensions": "512x512",
