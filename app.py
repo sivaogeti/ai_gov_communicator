@@ -21,6 +21,7 @@ def generate_image_from_replicate(prompt):
     response = requests.post(url, json=data, headers=headers)
     if response.status_code != 201:
         st.error("❌ Failed to start image generation.")
+        st.code(response.text, language="json")  # Show error details
         return None
 
     prediction = response.json()
